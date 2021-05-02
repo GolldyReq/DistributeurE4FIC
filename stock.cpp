@@ -17,7 +17,6 @@ stock::~stock()
     //dtor
 }
 
-
 //b)
 int stock::nb_sortes()
 {
@@ -27,13 +26,11 @@ int stock::nb_sortes()
 int stock::nb_unites(int num_produit)
 {
     return quantites[num_produit];
-
 }
 //d)
 elem* stock::ieme (int num_produit)
 {
     return rails[num_produit];
-
 }
 
 //e)
@@ -65,11 +62,11 @@ int stock::stocker(elem* adr_produit, int quantite)
 
     if(rechercher(adr_produit) != ERR_INCONNU)
     {
-        if(est_plein(rechercher(adr_produit)) == 1)
+        if(est_plein(rechercher(adr_produit)) == 1 && quantite!=-1)
         {
             return -1;
         }
-        if(quantites[rechercher(adr_produit)] + quantite > MAX_QUANTITE)
+        if(quantites[rechercher(adr_produit)] + quantite <= MAX_QUANTITE)
         {
             quantites[rechercher(adr_produit)] = quantites[rechercher(adr_produit)] + quantite;
             return 0;
@@ -77,19 +74,16 @@ int stock::stocker(elem* adr_produit, int quantite)
     }
     else
     {
-        //std::cout<<"Ajout d'une nouvelle sorte"<<std::endl;
         if(index == MAX_SORTES)
         {
             return ERR_PLEIN;
         }
         else
         {
-            cout<<"Stockage de :"<<adr_produit->acces_nom()<<" a l'index "<<index<<endl;
             quantites[index]=quantite;
             rails[index]=adr_produit;
             index ++ ;
             return 0;
-
         }
     }
 }
@@ -122,13 +116,12 @@ int stock::rechercher(elem* adr_produit )
 
     for(int i = 0 ; i<index ;i ++)
     {
-        //std::cout<<"rail : "<<rails[index]<<std::endl;
-        if(rails[index] == adr_produit)
+        if(rails[i] == adr_produit)
         {
             return i;
         }
     }
-    //std::cout<<"IMPOSSIBLE DE TROUVER "<<*adr_produit<<std::endl;
+    cout<<"je ne trouve pas le produit"<<endl;
     return ERR_INCONNU;
 
 }
@@ -148,4 +141,9 @@ int stock::est_plein(int num_produit)
 int stock::getMaxQuantite()
 {
     return MAX_QUANTITE;
+}
+
+elem* stock::getProduit(int num_produit)
+{
+    return ieme(num_produit);
 }

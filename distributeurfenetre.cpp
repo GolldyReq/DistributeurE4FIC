@@ -1,17 +1,28 @@
-#include "distributeurfenetre.h"+3
+#include "distributeurfenetre.h"
 #include <iostream>
 #include <string>
 #include <stdlib.h>
 #include <regex>
+#include <thread>
+#include <unistd.h>
+#include <sstream>
+#include <fstream>
 
 #include <QString>
 
 
 using namespace std;
 
+
+bool listen=false;
+
 DistributeurFenetre::DistributeurFenetre() : QWidget()
 {
 }
+
+
+
+
 
 DistributeurFenetre::DistributeurFenetre(int x,int y) : QWidget()
 {
@@ -27,14 +38,27 @@ DistributeurFenetre::DistributeurFenetre(int x,int y) : QWidget()
 
     //Layout
     final_layout = new QHBoxLayout();
+    final_layout->setSizeConstraint(QLayout::SetFixedSize);
     distrib_layout = new QGridLayout();
+    distrib_layout->setSizeConstraint(QLayout::SetFixedSize);
     touche_layout= new QGridLayout();
+    touche_layout->setSizeConstraint(QLayout::SetFixedSize);
+
     top_distrib = new QHBoxLayout();
     top_distrib->setAlignment(Qt::AlignLeft);
-    layout_info = new QGridLayout();
+    top_distrib->setSizeConstraint(QLayout::SetFixedSize);
+
+    //layout_info = new QGridLayout();
+    layout_info = new QVBoxLayout();
+    layout_info->setSizeConstraint(QLayout::SetFixedSize);
+
     status_layout = new QVBoxLayout();
+    status_layout->setSizeConstraint(QLayout::SetFixedSize);
+
     payment_layout = new QGridLayout();
     payment_layout->setAlignment(Qt::AlignLeft|Qt::AlignBottom);
+    payment_layout->setSizeConstraint(QLayout::SetFixedSize);
+
 
 
     //Image du distributeur
@@ -118,17 +142,65 @@ DistributeurFenetre::DistributeurFenetre(int x,int y) : QWidget()
         monney[i]->setStyleSheet("background-color: white;");
         monney[i]->setIcon(ButtonIcon);
         monney[i]->setIconSize(pixmap.rect().size());
-        monney[i]->setFixedSize(50,50);
+        monney[i]->setFixedSize(75,75);
         monney[i]->setIconSize(QSize(50,50));
         payment_layout->addWidget(monney[i] , 0,i);
 
     }
 
+    //Afficher informations produits
+    for(int i=0; i <distributeur->getStock().nb_sortes();i++)
+    {
+        //Layout
+        stocklayout[i] = new QHBoxLayout();
+        stocklayout[i]->setSizeConstraint(QLayout::SetFixedSize);
+
+        //Nom produit
+        string teststr = distributeur->getStock().ieme(i)->acces_nom();
+        cout<<teststr<<endl;
+        nomproduit[i] = new QLabel(QString::fromStdString(teststr));
+
+
+        //Progress bar
+        stock_produits[i] = new QProgressBar();
+        stock_produits[i]->setMinimum(0);
+        stock_produits[i]->setMaximum(distributeur->getStock().getMaxQuantite());
+        stock_produits[i]->setValue(distributeur->getStock().nb_unites(i));
+        stock_produits[i]->setFixedWidth(300);
+        stock_produits[i]->setAlignment(Qt::AlignLeft);
+
+        //Bouton d'ajout
+        addstock[i] = new QPushButton("Ajouter");
+        addstock[i]->setVisible(false);
+        QObject::connect(addstock[i], SIGNAL(clicked()), this, SLOT(AjoutStockProduit()));
+
+        //Bouton de retrait
+        removestock[i] =  new QPushButton("Retirer");
+        removestock[i]->setVisible(false);
+        QObject::connect(removestock[i], SIGNAL(clicked()), this, SLOT(SuppressionStockProduit()));
+
+
+
+        //layout_info->addWidget(stock_produits[i]);
+        stocklayout[i]->addWidget(nomproduit[i]);
+        stocklayout[i]->addWidget(stock_produits[i]);
+        stocklayout[i]->addWidget(addstock[i]);
+        stocklayout[i]->addWidget(removestock[i]);
+        layout_info->addLayout(stocklayout[i] );
+
+        //Bouton d'ajout
+        //addstock[i] = new QPushButton(i);
+
+
+        //Bouton de suppression
+
+    }
+
     //Attribution des layouts
-    distrib_layout->addLayout(top_distrib, 38,42 );//, 5 ,5);
-    distrib_layout->addLayout(touche_layout ,48,42);// , 4 , 3);
-    layout_info->addLayout(status_layout , 0 , 0 , 50 , 20);
-    layout_info->addLayout(payment_layout,0,50,50,20);
+    distrib_layout->addLayout(top_distrib, 25,95 );//, 5 ,5);
+    distrib_layout->addLayout(touche_layout ,50,95);// , 4 , 3);
+    layout_info->addLayout(status_layout );//, 0 , 0 );
+    layout_info->addLayout(payment_layout);//,50,0);
     final_layout->addLayout(distrib_layout);
     final_layout->addLayout(layout_info);
     this->setLayout(final_layout);
@@ -153,11 +225,12 @@ void DistributeurFenetre::CancelSaisie()
     textScreen->setText("");
     choix = -1;
     distributeur->annule_demande();
+    somme_mise = 0;
 }
+
 
 void DistributeurFenetre::ValiderSaisie()
 {
-
     if(textScreen->toPlainText() == "1234")
     {
         //Activé/Desactivé le mode admin
@@ -166,42 +239,117 @@ void DistributeurFenetre::ValiderSaisie()
         {
             cout<<"Mode Administrateur activé "<<endl;
             textScreen->setText("Mode Admin");
+            for (int i = 0 ; i < 5 ; i++)
+            {
+
+                monney[i]->setVisible(false);
+            }
+            for(int i= 0 ; i <distributeur->getStock().nb_sortes();i++)
+            {
+                addstock[i]->setVisible(true);
+                removestock[i]->setVisible(true);
+            }
         }
         else
         {
             cout<<"Fin du mode admin"<<endl;
             textScreen->setText("Produit ?");
-        }
+            for (int i = 0 ; i < 5 ; i++)
+            {
 
+                monney[i]->setVisible(true);
+            }
+            for(int i= 0 ; i <distributeur->getStock().nb_sortes();i++)
+            {
+                addstock[i]->setVisible(false);
+                removestock[i]->setVisible(false);
+            }
+        }
     }
+
     else if (textScreen->toPlainText().toInt() <= nb_produits && textScreen->toPlainText().toInt()>0)
     {
         choix = textScreen->toPlainText().toInt()-1;
         //Demande du produit
-        distributeur->demande_produit(choix);
+        //Verifiez que le produit est dispo
+        if(distributeur->getStock().nb_unites(choix) == 0)
+        {
+            textScreen->setText("Produit epuisé\nAppelez le fournisseur !");
+        }
+        else
+        {
+            distributeur->demande_produit(choix);
 
-        cout<<"test :"<<choix<<endl;
-        //QString txt =QString::fromStdString("Produit : "+ to_string(choix) + " OK!");
-        QString product_name = QString::fromStdString("Produit : "+ string(distributeur->getProductName(choix)));
-        QString product_price = QString::fromStdString("\nPrix : ")+ QString::number(distributeur->getProductPrice(choix) , 10 , 2) + QString("€");
-        QString TotalMise = QString::fromStdString("\nSomme : " ) + QString::number(distributeur->getSommeMise() , 10 , 2) + QString("€");
-        QString txt =product_name + product_price + TotalMise;
-        textScreen->setText(txt);
+            //QString product_name = QString::fromStdString("Produit : "+ string(distributeur->getProductName(choix)));
+            QString product_name = QString::fromStdString(string(distributeur->getProductName(choix)));
+            QString product_price = QString::fromStdString("\nPrix : ")+ QString::number(distributeur->getProductPrice(choix) , 10 , 2) + QString("€");
+            QString TotalMise = QString::fromStdString("\nSomme : " ) + QString::number(distributeur->getSommeMise() , 10 , 2) + QString("€");
+            QString txt =product_name + product_price + TotalMise;
+            textScreen->setText(txt);
+        }
     }
+    else
+    {
+        textScreen->setText("Erreur saisie !");
+    }
+
 }
 
+//Ajout de monnaie dans le distributeur
 void DistributeurFenetre::AjoutArgent()
 {
-    QPushButton *push = qobject_cast<QPushButton *>(sender());
-    somme_mise+=push->text().toFloat();
-    cout<<somme_mise<<endl;
-    distributeur->AjoutArgent(push->text().toFloat());
-    textScreen->setText("");
-    textScreen->insertPlainText(QString::fromStdString("\nSomme : " ) + QString::number(distributeur->getSommeMise() , 10 , 2));
-    if(distributeur->getMonnayeur().assez() || distributeur->getMonnayeur().exact())
+
+    if(choix!=-1)
     {
-        cout<<"Vous avez mis assez d'argent"<<endl;
-        distributeur->delivre_produit();
-        textScreen->setText("Produit délivré");
+        QPushButton *push = qobject_cast<QPushButton *>(sender());
+        somme_mise+=push->text().toFloat();
+        //cout<<somme_mise<<endl;
+        distributeur->AjoutArgent(push->text().toFloat());
+        textScreen->setText("");
+        //textScreen->insertPlainText(QString::fromStdString("\nSomme : " ) + QString::number(distributeur->getSommeMise() , 10 , 2));
+        if(distributeur->getMonnayeur().assez() || distributeur->getMonnayeur().exact())
+        {
+            cout<<"Vous avez mis assez d'argent"<<endl;
+
+            cout<<"quantité avant : "<<distributeur->getStock().nb_unites(choix)<<endl;;
+            float rendu = distributeur->delivre_produit();
+            somme_mise = 0;
+            cout<<"quantité apres : "<<distributeur->getStock().nb_unites(choix)<<endl;;
+            stock_produits[choix]->setValue(distributeur->getStock().nb_unites(choix));
+
+            textScreen->setText("Produit délivré\nRendu monnaie : "+QString::number(rendu, 10 , 2) + "€");
+        }
+        else
+        {
+            textScreen->setText("Vous avez insérer "+QString::number(somme_mise, 10 , 2) + "€\nEncore : "+QString::number(distributeur->getMonnayeur().getPrix()-somme_mise, 10 , 2) + "€");
+        }
+    }
+
+}
+
+void DistributeurFenetre::AjoutStockProduit()
+{
+    QPushButton *push = qobject_cast<QPushButton *>(sender());
+    for(int i= 0 ; i <distributeur->getStock().nb_sortes();i++)
+    {
+        if(addstock[i] == push)
+        {
+            distributeur->ajoutProduit(i);
+            stock_produits[i]->setValue(distributeur->getStock().nb_unites(i));
+        }
+    }
+
+}
+void DistributeurFenetre::SuppressionStockProduit()
+{
+    cout<<"suppression"<<endl;
+    QPushButton *push = qobject_cast<QPushButton *>(sender());
+    for(int i= 0 ; i <distributeur->getStock().nb_sortes();i++)
+    {
+        if(removestock[i] == push)
+        {
+            distributeur->suppressionProduit(i);
+            stock_produits[i]->setValue(distributeur->getStock().nb_unites(i));
+        }
     }
 }

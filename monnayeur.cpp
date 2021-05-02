@@ -41,11 +41,21 @@ void Monnayeur::recevoir(float value)
 float Monnayeur::rendre_monnaie()
 {
 
-    float somme_rendu = somme_total - prix_produit;
-    cout<<"Somme rendue "<<somme_rendu<<endl;
-    prix_produit = 0 ;
-    somme_total = 0;
-    return somme_rendu;
+    if(exact() || assez())
+    {
+        float somme_rendu = somme_total - prix_produit;
+        cout<<"Somme rendue "<<somme_rendu<<endl;
+        prix_produit = 0 ;
+        somme_total = 0;
+        return somme_rendu;
+    }
+    else
+    {
+        cout<<"somme rendue "<<somme_total<<endl;
+        prix_produit =0;
+        somme_total = 0;
+        return somme_total;
+    }
 
 }
 

@@ -1,0 +1,6 @@
+Kinder Bueno,2.50,7
+Twix,1.75,4
+Mars,1.50,4
+Coca-Cola,1.00,8
+Ice Tea,1.00,8
+Eau,0.70,3

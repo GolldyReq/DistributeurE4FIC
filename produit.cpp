@@ -1,5 +1,6 @@
 #include "Produit.h"
 #include <iostream>
+#include <cstring>
 
 using namespace std;
 
@@ -10,15 +11,18 @@ Produit::Produit()
 
 Produit::Produit(char *p_nom , float p_prix)
 {
-    nom = new char[25];
+    nom = new char[50];
     if(nom == NULL)
         cout<<"Erreur lors de l'allocation mémoire du nom du produit"<<endl;
     else
     {
-        nom = p_nom;
+        //nom = p_nom;
+        strcpy(nom, p_nom);
         prix = p_prix;
     }
 }
+
+
 
 Produit::~Produit()
 {

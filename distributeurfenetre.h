@@ -43,21 +43,27 @@ class DistributeurFenetre : public QWidget
         QGridLayout *touche_layout;// Layout touche;
         QHBoxLayout *top_distrib; //Ecran & vitrine
         //partie droite de l'appli
-        QGridLayout *layout_info;
+        QVBoxLayout *layout_info;
         QVBoxLayout *status_layout;
         QGridLayout *payment_layout;
-
-
 
         //Visuels
         QLabel *img_distrib;
         QLabel *e05 , *e1 , *e2,*e5,*e10;
         QPushButton *buttons[12];
         QPushButton *monney[5];
+
+        QLabel *nomproduit[5];
+        QHBoxLayout *stocklayout[5];
         QProgressBar *stock_produits[5];
+        QPushButton *addstock[5];
+        QPushButton *removestock[5];
+
+        QPushButton *addnewproduct;
+        QPushButton *removeproduct;
+
         QTextEdit *textScreen;
         QTextBlock *testScreen;
-
 
     public:
         DistributeurFenetre();
@@ -67,6 +73,8 @@ class DistributeurFenetre : public QWidget
         void CancelSaisie();
         void ValiderSaisie();
         void AjoutArgent();
+        void AjoutStockProduit();
+        void SuppressionStockProduit();
 };
 
 #endif // DISTRIBUTEURFENETRE_H

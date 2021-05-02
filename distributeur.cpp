@@ -1,6 +1,10 @@
 #include "Distributeur.h"
 #include "Produit.h"
 #include <iostream>
+#include <fstream>
+#include <vector>
+#include <string>
+#include <sstream>
 
 using namespace std;
 
@@ -12,7 +16,35 @@ Distributeur::Distributeur()
     num_produit = -1; //Aucun produit demandé
     //initialisation des produits
     Produit *produit;
+    ifstream readData("data.txt");
+    if(readData)
+    {
+        cout<<"Lecture des donnees du distributeur..."<<endl;
+        string product_line;
+        while(getline(readData, product_line))
+        {
+            cout<<product_line<<endl;
+            vector<string> result;
+            stringstream ss (product_line);
+            string item;
+            while (getline (ss, item,',')) {
+                result.push_back (item);
+            }
+            produit = new Produit((char*)result[0].c_str() , atof(result[1].c_str()));
+            stock_produits.stocker(produit,atoi(result[2].c_str()));
 
+
+        }
+        cout<<"Fermeture du fichier de donnees"<<endl;
+        readData.close();
+    }
+    else
+        cout<<"Le fichier de données est introuvable !"<<endl;
+
+
+
+
+    /*
     produit = new Produit("Orange" , 3.00);
     stock_produits.stocker(produit,5);
 
@@ -24,6 +56,9 @@ Distributeur::Distributeur()
 
     produit = new Produit("Cafe_beaucoup" , 5.00);
     stock_produits.stocker(produit,2);
+    */
+
+
 }
 
 //Fonction d'etat
@@ -33,14 +68,19 @@ int Distributeur::produit_demande() const
 }
 
 //Autres mehtodes
-void Distributeur::delivre_produit()
+float Distributeur::delivre_produit()
 {
     stock_produits.retirer(num_produit);
-    monnayeur.rendre_monnaie();
+    float res = monnayeur.rendre_monnaie();
     if(stock_produits.est_limite())
         cout<<"[Appelez le remplisseur !] " <<endl;
     else
         cout<<"[Remplissage OK]"<<endl;
+
+    //Appel fonction d'ecriture fichier
+    updateData();
+
+    return res;
 }
 
 void Distributeur::demande_produit(int num)
@@ -48,14 +88,6 @@ void Distributeur::demande_produit(int num)
     num_produit = num;
     cout<<"Produit demande : " <<stock_produits.ieme(num_produit)->acces_nom()<<endl;
     monnayeur.memorise_prix(stock_produits.ieme(num_produit)->acces_prix());
-    /*
-    if(monnayeur.getPrix() && (monnayeur.exact() || monnayeur.assez()) )
-    {
-        cout<<"Vous avez mis assez d'argent"<<endl;
-        monnayeur.rendre_monnaie();
-    }
-    */
-
 }
 
 void Distributeur::annule_demande()
@@ -86,13 +118,6 @@ float Distributeur::getProductPrice(int num)
 void Distributeur::AjoutArgent(float qt)
 {
     monnayeur.recevoir(qt);
-    /*
-    if(monnayeur.getPrix() && (monnayeur.exact() || monnayeur.assez()) )
-    {
-        cout<<"Vous avez mis assez d'argent"<<endl;
-        monnayeur.rendre_monnaie();
-    }
-    */
 }
 
 float Distributeur::getSommeMise()
@@ -103,6 +128,28 @@ float Distributeur::getSommeMise()
 Monnayeur Distributeur::getMonnayeur()
 {
     return monnayeur;
+}
+
+stock Distributeur::getStock()
+{
+    return stock_produits;
+}
+
+
+void Distributeur::ajoutProduit(int num_produit)
+{
+    stock_produits.stocker(stock_produits.ieme(num_produit),1);
+    //Appel fonction d'ecriture fichier
+    updateData();
+
+}
+
+void Distributeur::suppressionProduit(int num_produit)
+{
+    if(stock_produits.nb_unites(num_produit)>0)
+        stock_produits.stocker(stock_produits.ieme(num_produit),-1);
+    //Appel fonction d'ecriture fichier
+    updateData();
 }
 
 void Distributeur::run()
@@ -172,3 +219,27 @@ void Distributeur::run()
     }//while ! fini
 } //Run()
 
+void Distributeur::updateData()
+{
+    ofstream writeData("data.txt");
+    if(writeData)
+    {
+        for(int i=0 ; i<stock_produits.nb_sortes();i++)
+        {
+            string nom_produit = stock_produits.ieme(i)->acces_nom();
+            float prix_produit = stock_produits.ieme(i)->acces_prix();
+            int qt = stock_produits.nb_unites(i);
+            writeData<<nom_produit<<","<<prix_produit<<","<<qt<<endl;
+        }
+    }
+    else
+    {
+        cout<<"Impossible d'ouvrir le fichier "<<endl;
+    }
+
+}
+
+void Distributeur::Start()
+{
+
+}

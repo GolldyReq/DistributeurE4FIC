@@ -47,6 +47,7 @@ class stock
         int est_plein(int);
         int rechercher(elem* );
         int getMaxQuantite();
+        elem* getProduit(int);
 };
 
 #endif // STOCK_H
